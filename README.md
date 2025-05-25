@@ -18,10 +18,45 @@
 
 ## 开始
 
-> 1. 确保已安装 [Python 3](https://www.python.org)
-> 2. 下载 zip: https://github.com/makeccx/makeccx-mini/archive/refs/heads/main.zip
-> 3. 创建文件夹，例如 `clipcc-extension-example`
-> 4. 解压到文件夹里
-> 5. 使用 [VSCode](https://code.visualstudio.com) 打开文件夹
-> 6. 修改 `src/info.json`
-> 7. 新建终端，运行命令 `./makeccx`
+1. 确保已安装 [Python 3](https://www.python.org)
+2. 下载 zip: https://github.com/makeccx/makeccx-mini/archive/refs/heads/main.zip
+3. 创建文件夹，例如 `clipcc-extension-example`
+4. 解压到文件夹里
+5. 使用 [VSCode](https://code.visualstudio.com) 打开文件夹
+6. 修改 `src/info.json`
+7. 新建终端，运行命令 `./makeccx`
+
+## 升级到标准版
+
+需确保已安装 [Node.js](https://nodejs.org/) 。  
+
+1. 删除以下文件
+
+```
+clipcc-extension.d.ts
+makeccx
+makeccx.bat
+```
+
+2. 新建 `package.json` 文件，然后粘贴以下内容，然后保存。
+
+```json
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "makeccx build"
+  },
+  "devDependencies": {
+    "clipcc-extension": "^0.2.0",
+    "makeccx": "^1.1.1"
+  }
+}
+```
+
+3. 运行命令
+
+```
+npm i
+npm run build
+```
