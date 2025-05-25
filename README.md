@@ -1,6 +1,6 @@
 # makeccx-mini
 
-基于 Python 3 实现。
+😎 迷你版 makeccx ，基于 Python 3 实现。
 
 > ✅ 开发环境占用小  
 > ✅ 打包速度快  
