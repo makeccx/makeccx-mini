@@ -1,0 +1,25 @@
+{
+    "name": "js",
+    "description": "-",
+    "hello": {
+        "": "Hello",
+        "github": "Github",
+        "hello": "Say hello",
+        "log": "Print log",
+        "abc": {
+            "": "abc[a]",
+            "a": {
+                "item1": "a",
+                "item2": "b",
+                "item3": "c"
+            }
+        },
+        "typeof": "typeof[a]",
+        "sprite_name": "sprite [a] name"
+    },
+    "boolean": {
+        "": "boolean",
+        "boolean": "[a]",
+        "equal": "[a]==[b]"
+    }
+}

@@ -1,0 +1,149 @@
+#!/usr/bin/env python3
+
+# https://github.com/makeccx/makeccx-mini
+
+print('\nmakeccx-mini')
+
+import json, os, math, zipfile, glob, re
+
+src = 'src'
+dist = 'dist'
+
+with open(src+'/info.json', encoding='UTF-8') as f:
+    info = json.load(f)
+print(json.dumps(info, indent=2))
+print()
+
+name = f"{dist}/{info['id']}@{info['version']}.ccx"
+print(name)
+
+if os.path.exists(dist):
+    if os.path.isfile(dist):
+        os.remove(dist)
+        os.mkdir(dist)
+else:
+    os.mkdir(dist)
+
+
+def appendID(left:str, right:str):
+    left = str(left)
+    right = str(right)
+    if right == '':
+        return left
+    if not left.endswith('.'):
+        left += '.'
+    if right.startswith(left):
+        return right
+    return left + right
+
+def flatLocale(leftID:str, v1:dict)-> dict[str, str]:
+    outObj = {}
+    for id1 in v1:
+        v1v = v1[id1]
+        id1 = appendID(leftID, id1)
+        if isinstance(v1v, dict):
+            v2 = flatLocale(id1, v1v)
+            for id2 in v2:
+                outObj[id2] = v2[id2]
+        else:
+            outObj[id1] = str(v1v)
+    return outObj
+
+def dumps(obj):
+    return json.dumps(obj, ensure_ascii=False, separators=(',', ':'))
+
+
+modules = '{'
+modules += '"clipcc-extension":(m)=>{m.exports=self.ClipCCExtension},'
+
+
+def addJS(arcname: str, js: str):
+    js = js.replace('\r\n', '\n')
+    global modules
+    modules += dumps('./'+arcname) + ':new Function("module","require",' + dumps(js) + '),'
+
+def addJsonStr(arcname: str, JsonStr: str):
+    JsonStr = JsonStr.replace('\r\n', '\n')
+    global modules
+    modules += dumps('./'+arcname) + ':(m)=>{m.exports=' + JsonStr + '},'
+
+
+zf = zipfile.ZipFile(name, 'w', zipfile.ZIP_DEFLATED, compresslevel=9)
+
+
+def addCover(name: str, rightName: str):
+    leftPath: str = info[name]
+    if leftPath:
+        leftPath = leftPath.replace('\\', '/')
+        rightName += os.path.splitext(leftPath)[1]
+        zf.write(src+'/'+leftPath, rightName)
+        info[name] = rightName
+
+
+addCover('icon', 'cover')
+addCover('inset_icon', 'icon')
+
+infoJSON = dumps(info)
+zf.writestr('info.json', infoJSON)
+addJsonStr('info.json', infoJSON)
+
+
+for arcname in glob.iglob('**/*', root_dir=src, recursive=True, include_hidden=True):
+    arcname = arcname.replace('\\', '/')
+    filename = src + '/' + arcname
+    if arcname == 'info.json':
+        pass
+    elif arcname.endswith('.json'):
+        with open(filename, encoding='UTF-8') as f:
+            inputObj: dict = json.load(f)
+            if arcname.startswith('locales/'):
+                inputObj = flatLocale(info['id'], inputObj)
+            zf.writestr(arcname, dumps(inputObj))
+    elif arcname.endswith('.js'):
+        with open(filename, encoding='UTF-8') as f:
+            addJS(arcname, f.read())
+
+modules = re.sub(r',$', '', modules)
+modules += '}'
+
+# 这些代码会用正则表达式压成一行，用户的代码不受影响。
+generateMain = re.sub(r'\n\s*', '', r'''
+let L=''' + modules + r''',
+    P=(p,d)=>{
+        if(!/^[\./]/.test(p=p.replaceAll("\\","/")))return p;
+        let O=[];
+        for(let v of (d+p).split("/"))
+            v==""||v=="."||(
+                v==".."?O.pop():O.push(v)
+            );
+        O.unshift(".");
+        return O.join("/")
+    },
+    R=(n,d,t)=>{
+        if(t.has(n=P(n,d)))
+            throw"Can not loop require "+JSON.stringify(n);
+        let M=L[n];
+        if(!M){
+            if(!n.endsWith(".js"))try{
+                return R(n+".js","",t);
+            }catch(e){}
+            throw"Can not find module "+JSON.stringify(n)
+        }
+        let m={exports:{}}
+           ,D=n.replace(/[^/]*$/,"");
+        t.add(n);
+        M(m,(N)=>R(N,D,t));
+        t.delete(n);
+        return m.exports
+    };
+module.exports=R("./main.js","",new Set());
+''')
+
+zf.writestr("main.js", generateMain)
+
+zf.close()
+
+
+size = os.path.getsize(name)
+size = math.ceil(size / 1024 * 100) / 100
+print(f'{size} KiB\n')
