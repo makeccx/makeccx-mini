@@ -43,13 +43,12 @@ makeccx.bat
 ```json
 {
   "private": true,
-  "type": "module",
   "scripts": {
     "build": "makeccx build"
   },
   "devDependencies": {
     "clipcc-extension": "^0.2.0",
-    "makeccx": "^1.1.1"
+    "makeccx": "^1.1.3"
   }
 }
 ```
